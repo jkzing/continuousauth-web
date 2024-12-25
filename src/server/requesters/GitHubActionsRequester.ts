@@ -60,7 +60,7 @@ export class GitHubActionsRequester
     claims: jwt.JwtPayload,
     project: Project,
   ): Promise<AllowedState> {
-    if (claims.aud !== 'continuousauth.dev') {
+    if (claims.aud !== 'cfa.volc.jkzing.com') {
       return { ok: false, error: 'Token audience is not correct' };
     }
     // Wrong repository

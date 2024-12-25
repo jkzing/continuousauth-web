@@ -12,7 +12,7 @@ passport.use(
       callbackURL:
         process.env.NODE_ENV !== 'production'
           ? 'http://localhost:3000/api/auth/callback'
-          : 'https://continuousauth.dev/api/auth/callback',
+          : 'https://cfa.volc.jkzing.com/api/auth/callback',
       scope: ['repo'],
     },
     (accessToken, refreshToken, profile, cb) => {
