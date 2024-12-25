@@ -101,6 +101,7 @@
     "connect-redis": "^7.1.0",
     "cross-env": "^6.0.3",
     "debug": "^4.1.1",
+    "dotenv": "^16.4.7",
     "dotenv-safe": "^8.2.0",
     "express-history-api-fallback": "^2.2.1",
     "express-session": "^1.17.0",
@@ -126,5 +127,6 @@
   },
   "browserslist": [
     "last 2 versions, not dead, > 0.2%"
-  ]
+  ],
+  "packageManager": "yarn@1.22.19"
 }
