@@ -1,10 +1,11 @@
+/// <reference path="./_joi_extract.d.ts" />
+
 import { Octokit } from '@octokit/rest';
 import * as debug from 'debug';
 import * as express from 'express';
 import * as Joi from 'joi';
 
 import { createA } from './a';
-import './_joi_extract';
 import { User as CFAUser } from '../../common/types';
 
 const d = debug('cfa:server:helpers');

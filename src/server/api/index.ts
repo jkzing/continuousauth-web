@@ -4,6 +4,7 @@ import { repoRoutes } from './repo';
 import { projectRoutes } from './project';
 import { requireLogin } from '../helpers/_middleware';
 import { requestRoutes } from './request';
+import { feishuRoutes } from './services/feishu';
 
 export function apiRoutes() {
   const router = express();
@@ -12,6 +13,7 @@ export function apiRoutes() {
   router.use('/project', requireLogin, projectRoutes());
   router.use('/repos', requireLogin, repoRoutes());
   router.use('/request', requestRoutes());
+  router.use('/services/feishu', feishuRoutes());
 
   return router;
 }

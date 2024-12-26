@@ -97,6 +97,12 @@ export function repoRoutes() {
                   channel: p.responder_slack.channelName,
                 }
               : null,
+            responder_feishu: p.responder_feishu
+              ? {
+                  chatId: p.responder_feishu.chatId,
+                  userToMention: p.responder_feishu.userToMention,
+                }
+              : null,
           };
         }),
       );

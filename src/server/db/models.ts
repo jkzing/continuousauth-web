@@ -76,6 +76,10 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
   responder_slack: SlackResponderConfig | null;
   responder_slack_id: string | null;
 
+  @BelongsTo(() => FeishuResponderConfig, 'responder_feishu_id')
+  responder_feishu: FeishuResponderConfig | null;
+  responder_feishu_id: string | null;
+
   public async resetAllRequesters(t: Transaction) {
     this.requester_circleCI_id = null;
     this.requester_gitHub_id = null;
@@ -90,14 +94,18 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
 
   public async resetAllResponders(t: Transaction) {
     this.responder_slack_id = null;
+    this.responder_feishu_id = null;
     await this.save({ transaction: t });
     if (this.responder_slack) {
       await this.responder_slack.destroy({ transaction: t });
     }
+    if (this.responder_feishu) {
+      await this.responder_feishu.destroy({ transaction: t });
+    }
   }
 
   static get allIncludes() {
-    return [CircleCIRequesterConfig, GitHubActionsRequesterConfig, SlackResponderConfig];
+    return [CircleCIRequesterConfig, GitHubActionsRequesterConfig, SlackResponderConfig, FeishuResponderConfig];
   }
 }
 
@@ -305,6 +313,52 @@ export class OTPRequest<Req = unknown, Res = unknown> extends Model<
   project: CreationOptional<Project>;
 }
 
+@Table(tableOptions)
+export class FeishuResponderConfig extends Model<
+  InferAttributes<FeishuResponderConfig>,
+  InferCreationAttributes<FeishuResponderConfig>
+> {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column(DataType.UUID)
+  id: CreationOptional<string>;
+
+  @AllowNull(false)
+  @Column(DataType.STRING)
+  chatId: string;
+
+  @AllowNull(false)
+  @Column(DataType.STRING)
+  userToMention: string;
+
+  @AllowNull(false)
+  @Column(DataType.STRING)
+  tenantKey: string;
+
+  @AllowNull(false)
+  @Column(DataType.STRING)
+  appToken: string;
+}
+
+@Table(tableOptions)
+export class FeishuResponderLinker extends Model<
+  InferAttributes<FeishuResponderLinker>,
+  InferCreationAttributes<FeishuResponderLinker>
+> {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column(DataType.UUID)
+  id: CreationOptional<string>;
+
+  @AllowNull(false)
+  @ForeignKey(() => Project)
+  @Column(DataType.BIGINT)
+  projectId: string;
+
+  @BelongsTo(() => Project, 'projectId')
+  project: CreationOptional<Project>;
+}
+
 const migrationFns: ((t: Transaction, qI: QueryInterface) => Promise<void>)[] = [
   async function addUserThatRespondedAttribute(t: Transaction, queryInterface: QueryInterface) {
     const table: any = await queryInterface.describeTable(OTPRequest.getTableName());
@@ -367,6 +421,7 @@ const initializeInstance = async (sequelize: Sequelize) => {
     SlackResponderLinker,
     OTPRequest,
     SlackInstall,
+    FeishuResponderConfig,
   ]);
 
   await sequelize.sync();

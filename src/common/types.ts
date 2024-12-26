@@ -19,6 +19,10 @@ export interface SimpleProject extends SimpleRepo {
     team: string;
     channel: string;
   } | null;
+  responder_feishu: {
+    chatId: string;
+    userToMention: string;
+  } | null;
 }
 
 export interface FullProject extends SimpleRepo {
@@ -33,6 +37,10 @@ export interface FullProject extends SimpleRepo {
     channelName: string;
     teamIcon: string;
     usernameToMention: string;
+  } | null;
+  responder_feishu: {
+    chatId: string;
+    userToMention: string;
   } | null;
 }
 

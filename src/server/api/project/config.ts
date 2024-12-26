@@ -12,6 +12,7 @@ import {
   withTransaction,
   CircleCIRequesterConfig,
   GitHubActionsRequesterConfig,
+  FeishuResponderLinker,
 } from '../../db/models';
 import { getProjectFromIdAndCheckPermissions } from './_safe';
 import { getGitHubAppInstallationToken } from '../../helpers/auth';
@@ -331,6 +332,77 @@ export function configRoutes() {
 
         project.responder_slack.usernameToMention = req.body.usernameToMention;
         await project.responder_slack.save();
+
+        res.json(project);
+      },
+    ),
+  );
+
+  router.post(
+    '/:id/config/responders/feishu',
+    validate(
+      {
+        a,
+        params: {
+          id: Joi.number().integer().required(),
+        },
+      },
+      async (req, res) => {
+        const project = await getProjectFromIdAndCheckPermissions(req.params.id, req, res);
+        if (!project) return;
+
+        const linker = await withTransaction(async (t) => {
+          await FeishuResponderLinker.destroy({
+            where: {
+              projectId: project.id,
+            },
+            transaction: t,
+          });
+          return await FeishuResponderLinker.create(
+            {
+              projectId: project.id,
+            },
+            {
+              transaction: t,
+              returning: true,
+            },
+          );
+        });
+
+        res.json({
+          linker,
+          feishuAppId: process.env.FEISHU_APP_ID,
+        });
+      },
+    ),
+  );
+
+  router.patch(
+    '/:id/config/responders/feishu',
+    validate(
+      {
+        a,
+        params: {
+          id: Joi.number().integer().required(),
+        },
+        body: {
+          chatId: Joi.string().required(),
+          userToMention: Joi.string().required(),
+        },
+      },
+      async (req, res) => {
+        const project = await getProjectFromIdAndCheckPermissions(req.params.id, req, res);
+        if (!project) return;
+
+        if (!project.responder_feishu) {
+          return res.status(400).json({
+            error: 'Project is not configured to use Feishu as a responder',
+          });
+        }
+
+        project.responder_feishu.chatId = req.body.chatId;
+        project.responder_feishu.userToMention = req.body.userToMention;
+        await project.responder_feishu.save();
 
         res.json(project);
       },

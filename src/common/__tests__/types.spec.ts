@@ -5,6 +5,7 @@ describe('projectIsMissingConfig', () => {
     expect(
       projectIsMissingConfig({
         responder_slack: {},
+        responder_feishu: {},
         requester_circleCI: {},
         requester_gitHub: null,
       }),
@@ -15,6 +16,7 @@ describe('projectIsMissingConfig', () => {
     expect(
       projectIsMissingConfig({
         responder_slack: {},
+        responder_feishu: null,
         requester_circleCI: null,
         requester_gitHub: null,
       }),
@@ -25,6 +27,7 @@ describe('projectIsMissingConfig', () => {
     expect(
       projectIsMissingConfig({
         responder_slack: null,
+        responder_feishu: null,
         requester_circleCI: {},
         requester_gitHub: null,
       }),
@@ -35,6 +38,7 @@ describe('projectIsMissingConfig', () => {
     expect(
       projectIsMissingConfig({
         responder_slack: null,
+        responder_feishu: null,
         requester_circleCI: null,
         requester_gitHub: null,
       }),

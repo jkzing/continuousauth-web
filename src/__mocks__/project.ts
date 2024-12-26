@@ -6,6 +6,7 @@ export const mockProject = (): FullProject => ({
   requester_circleCI: null,
   requester_gitHub: null,
   responder_slack: null,
+  responder_feishu: null,
   id: '123',
   repoName: 'my-repo',
   repoOwner: 'my-owner',

@@ -3,9 +3,11 @@ import { Alert, Heading, Pane, Paragraph, Tab, Tablist } from 'evergreen-ui';
 
 import { FullProject } from '../../common/types';
 import { SlackResponderConfig } from './configurators/SlackResponderConfig';
+import { FeishuResponderConfig } from './configurators/FeishuResponderConfig';
 
 import styles from './ReqResConfig.scss';
 import { SlackLogo } from './icons/Slack';
+import { FeishuLogo } from './icons/Feishu';
 
 export interface Props {
   project: FullProject;
@@ -15,6 +17,7 @@ export interface Props {
 enum ResponderTab {
   NOTHING_YET,
   SLACK,
+  FEISHU
 }
 
 const defaultTabForProject = (project: FullProject) => {
@@ -60,6 +63,13 @@ export function ResponderConfig({ project, setProject }: Props) {
           >
             <SlackLogo className={styles.tabIcon} /> Slack
           </Tab>
+          <Tab
+            onSelect={() => setActiveTab(ResponderTab.FEISHU)}
+            isSelected={activeTab === ResponderTab.FEISHU}
+            style={{ paddingLeft: 28, position: 'relative' }}
+          >
+            <FeishuLogo className={styles.tabIcon} /> Feishu
+          </Tab>
           <Tab disabled>More Coming Soon...</Tab>
         </Tablist>
       </Pane>
@@ -68,6 +78,8 @@ export function ResponderConfig({ project, setProject }: Props) {
           <Paragraph>No Responder has been configured, choose one to get started!</Paragraph>
         ) : activeTab === ResponderTab.SLACK ? (
           <SlackResponderConfig project={project} setProject={setProject} />
+        ) : activeTab === ResponderTab.FEISHU ? (
+          <FeishuResponderConfig project={project} setProject={setProject} />
         ) : null}
       </Pane>
     </Pane>
