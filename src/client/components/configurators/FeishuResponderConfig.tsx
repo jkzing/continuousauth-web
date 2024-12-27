@@ -94,7 +94,7 @@ export function FeishuResponderConfig({ project, setProject }: Props) {
         <Button
           appearance="primary"
           onClick={() => updateConfigTask.start && updateConfigTask.start()}
-          isLoading={updateConfigTask.pending}
+          isLoading={updateConfigTask.started && updateConfigTask.pending}
         >
           Update Configuration
         </Button>

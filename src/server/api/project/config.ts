@@ -385,10 +385,6 @@ export function configRoutes() {
         params: {
           id: Joi.number().integer().required(),
         },
-        body: {
-          chatId: Joi.string().required(),
-          userToMention: Joi.string().required(),
-        },
       },
       async (req, res) => {
         const project = await getProjectFromIdAndCheckPermissions(req.params.id, req, res);
@@ -400,9 +396,18 @@ export function configRoutes() {
           });
         }
 
-        project.responder_feishu.chatId = req.body.chatId;
-        project.responder_feishu.userToMention = req.body.userToMention;
-        await project.responder_feishu.save();
+        // FIXME:
+        // @ts-ignore
+        if (req.body.chatId) {
+          // @ts-ignore
+          project.responder_feishu.chatId = req.body.chatId;
+          // @ts-ignore
+          project.responder_feishu.userToMention = req.body.userToMention ?? '';
+          await project.responder_feishu.save();
+        } else {
+          await project.responder_feishu.destroy();
+          await project.save();
+        }
 
         res.json(project);
       },
