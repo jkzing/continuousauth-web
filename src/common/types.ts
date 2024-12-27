@@ -65,6 +65,6 @@ export const projectIsMissingConfig = (
   >,
 ) => {
   const hasRequester: boolean = !!project.requester_circleCI || !!project.requester_gitHub;
-  const hasResponder: boolean = !!project.responder_slack;
+  const hasResponder: boolean = !!project.responder_slack || !!project.responder_feishu;
   return !hasRequester || !hasResponder;
 };
