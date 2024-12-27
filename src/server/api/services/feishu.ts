@@ -1,5 +1,5 @@
 import * as express from 'express';
-import { Client, EventDispatcher, adaptExpress } from '@larksuiteoapi/node-sdk';
+import { Client, EventDispatcher, CardActionHandler, adaptExpress } from '@larksuiteoapi/node-sdk';
 import {
   FeishuResponderConfig,
   FeishuResponderLinker,
@@ -100,7 +100,27 @@ export function feishuRoutes() {
     },
   });
 
+  const cardActionHandler = new CardActionHandler(
+    {
+      encryptKey: process.env.FEISHU_ENCRYPT_KEY!,
+    },
+    (data) => {
+      console.log(data);
+      return {
+        toast: {
+          type: 'success',
+          content: '卡片交互成功',
+          i18n: {
+            zh_cn: '卡片交互成功',
+            en_us: 'card action success',
+          },
+        },
+      };
+    },
+  );
+
   router.use('/events', adaptExpress(eventDispatcher, { autoChallenge: true }));
+  router.use('/card', adaptExpress(cardActionHandler, { autoChallenge: true }));
 
   router.get('/oauth', async (req, res) => {
     const { code } = req.query;
