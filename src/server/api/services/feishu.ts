@@ -1,6 +1,11 @@
 import * as express from 'express';
-import { Client } from '@larksuiteoapi/node-sdk';
-import { FeishuResponderConfig, FeishuResponderLinker, Project, withTransaction } from '../../db/models';
+import { Client, EventDispatcher, adaptExpress } from '@larksuiteoapi/node-sdk';
+import {
+  FeishuResponderConfig,
+  FeishuResponderLinker,
+  Project,
+  withTransaction,
+} from '../../db/models';
 
 declare module 'express-session' {
   interface SessionData {
@@ -11,7 +16,87 @@ declare module 'express-session' {
 }
 
 export function feishuRoutes() {
-  const router = express();
+  if (
+    !process.env.FEISHU_APP_ID ||
+    !process.env.FEISHU_APP_SECRET ||
+    !process.env.FEISHU_ENCRYPT_KEY
+  ) {
+    throw new Error('Missing Feishu environment variables');
+  }
+
+  const router = express.Router();
+
+  const client = new Client({
+    appId: process.env.FEISHU_APP_ID!,
+    appSecret: process.env.FEISHU_APP_SECRET!,
+  });
+
+  const eventDispatcher = new EventDispatcher({
+    encryptKey: process.env.FEISHU_ENCRYPT_KEY!,
+  }).register({
+    'im.message.receive_v1': async (data) => {
+      const chatId = data.message.chat_id;
+      const content = JSON.parse(data.message.content);
+      const respond = (text: string) => {
+        return client.im.message.create({
+          params: {
+            receive_id_type: 'chat_id',
+          },
+          data: {
+            receive_id: chatId,
+            content: JSON.stringify({ text }),
+            msg_type: 'text',
+          },
+        });
+      };
+
+      // 处理 /cfa-link 命令
+      if (content.text && content.text.startsWith('/cfa-link')) {
+        const linkerId = content.text.split(' ')[1];
+        if (!linkerId) {
+        }
+
+        try {
+          const linker = await FeishuResponderLinker.findByPk(linkerId, {
+            include: [Project],
+          });
+
+          if (!linker) {
+            return respond('提供的 linker ID 已被使用或不存在，请返回 CFA 重试。');
+          }
+
+          await withTransaction(async (t) => {
+            const config = await FeishuResponderConfig.create(
+              {
+                chatId: chatId,
+                userToMention: '',
+                tenantKey: '',
+                appToken: '',
+              },
+              {
+                transaction: t,
+                returning: true,
+              },
+            );
+
+            await linker.project.resetAllResponders(t);
+            linker.project.responder_feishu_id = config.id;
+            await linker.project.save({ transaction: t });
+            await linker.destroy({ transaction: t });
+          });
+
+          return respond(
+            `成功将此群组链接到项目 \`${linker.project.repoOwner}/${linker.project.repoName}\``,
+          );
+        } catch (error) {
+          console.error('Error handling cfa-link command:', error);
+          return respond('处理命令时发生错误，请稍后重试。');
+        }
+      }
+    },
+  });
+
+  router.use('/events', adaptExpress(eventDispatcher, { autoChallenge: true }));
 
   router.get('/oauth', async (req, res) => {
     const { code } = req.query;
@@ -19,17 +104,12 @@ export function feishuRoutes() {
       return res.status(400).send('Missing code parameter');
     }
 
-    const client = new Client({
-      appId: process.env.FEISHU_APP_ID!,
-      appSecret: process.env.FEISHU_APP_SECRET!,
-    });
-
     try {
       // 使用授权码获取用户访问令牌
       const userInfo = await client.authen.accessToken.create({
         data: {
           grant_type: 'authorization_code',
-          code: code as string
+          code: code as string,
         },
       });
 
@@ -56,69 +136,6 @@ export function feishuRoutes() {
       console.error('Error during Feishu OAuth:', error);
       res.status(500).send('Failed to complete OAuth flow');
     }
-  });
-
-  // 处理飞书机器人命令
-  router.post('/command', async (req, res) => {
-    const { token, text, user_id, chat_id } = req.body;
-
-    // 验证请求是否来自飞书
-    if (token !== process.env.FEISHU_VERIFICATION_TOKEN) {
-      return res.status(401).json({ error: 'Invalid verification token' });
-    }
-
-    // 处理 /cfa-link 命令
-    if (text.startsWith('/cfa-link')) {
-      const linkerId = text.split(' ')[1];
-      if (!linkerId) {
-        return res.json({
-          text: '缺少必要的参数 "link-id"，请确保您按照 CFA 上的说明正确操作。',
-        });
-      }
-
-      try {
-        const linker = await FeishuResponderLinker.findByPk(linkerId, {
-          include: [Project],
-        });
-
-        if (!linker) {
-          return res.json({
-            text: '提供的 linker ID 已被使用或不存在，请返回 CFA 重试。',
-          });
-        }
-
-        await withTransaction(async (t) => {
-          const config = await FeishuResponderConfig.create(
-            {
-              chatId: chat_id,
-              userToMention: user_id,
-              tenantKey: '',
-              appToken: req.session?.feishu?.accessToken || '',
-            },
-            {
-              transaction: t,
-              returning: true,
-            },
-          );
-
-          await linker.project.resetAllResponders(t);
-          linker.project.responder_feishu_id = config.id;
-          await linker.project.save({ transaction: t });
-          await linker.destroy({ transaction: t });
-        });
-
-        return res.json({
-          text: `成功将此群组链接到项目 \`${linker.project.repoOwner}/${linker.project.repoName}\``,
-        });
-      } catch (error) {
-        console.error('Error handling cfa-link command:', error);
-        return res.json({
-          text: '处理命令时发生错误，请稍后重试。',
-        });
-      }
-    }
-
-    res.json({ text: '未知命令' });
   });
 
   return router;
