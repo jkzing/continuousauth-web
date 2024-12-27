@@ -28,7 +28,7 @@ export class FeishuResponder extends Responder<unknown, FeishuResponderMetadata>
       const config = this.project.responder_feishu;
       if (!config) return;
 
-      const messageText = this.getOtpText(request.project, config);
+      const messageText = this.getOtpText(request.project);
       const card = this.buildCard(messageText, info);
 
       const response = await this.client.im.message.create({
@@ -56,53 +56,62 @@ export class FeishuResponder extends Responder<unknown, FeishuResponderMetadata>
     }
   }
 
-  private getOtpText = (project: Project, config: FeishuResponderConfig) =>
-    `⚠️ 注意 @${config.userToMention}! CFA 系统需要 2FA OTP token 来发布 ${project.repoOwner}/${project.repoName} 的新版本。`;
+  private getOtpText = (project: Project) =>
+    // `⚠️ 注意! CFA 系统需要 2FA OTP token 来发布 ${project.repoOwner}/${project.repoName} 的新版本。`;
+    `🚧 Attention on deck! The CFA system needs a 2FA OTP token to publish a new release of ${project.repoOwner}/${project.repoName}. （已编辑） \nThe request source is linked below\n> TODO\nThis request has been validated by CFA and now just requires a OTP code.`;
 
   private buildCard(messageText: string, info: RequestInformation | null) {
-    const elements = [
-      {
-        tag: 'div',
-        text: {
-          tag: 'plain_text',
-          content: messageText,
-        },
-      },
-    ];
-
-    if (info) {
-      elements.push({
-        tag: 'div',
-        text: {
-          tag: 'lark_md',
-          content: `**请求来源:** [${info.description}](${info.url})`,
-        },
-      });
-    }
-
-    elements.push({
-      tag: 'action',
-      // @ts-ignore
-      actions: [
-        {
-          tag: 'button',
-          text: {
-            tag: 'plain_text',
-            content: '输入 OTP Token',
-          },
-          type: 'danger',
-          value: {
-            key: 'open_otp_modal',
-          },
-        },
-      ],
-    });
+    // if (info) {
+    //   elements.push({
+    //     tag: 'div',
+    //     text: {
+    //       tag: 'lark_md',
+    //       content: `**Request source:** [${info.description}](${info.url})`,
+    //     },
+    //   });
+    // }
 
     return {
       config: {
+        update_multi: true,
         wide_screen_mode: true,
       },
-      elements,
+      header: {
+        title: {
+          tag: 'plain_text',
+          content: 'CFA OTP Request',
+        },
+        template: 'yellow',
+      },
+      elements: [
+        {
+          tag: 'markdown',
+          content: messageText,
+          text_align: 'left',
+          text_size: 'normal',
+        },
+        {
+          tag: 'action',
+          actions: [
+            {
+              tag: 'input',
+              placeholder: {
+                tag: 'plain_text',
+                content: 'Enter OTP here',
+              },
+              default_value: '',
+              width: 'default',
+            },
+          ],
+          fallback: {
+            tag: 'fallback_text',
+            text: {
+              tag: 'plain_text',
+              content: '仅支持在飞书 V6.8 及以上版本使用',
+            },
+          },
+        },
+      ],
     };
   }
 

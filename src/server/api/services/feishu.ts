@@ -35,6 +35,7 @@ export function feishuRoutes() {
     encryptKey: process.env.FEISHU_ENCRYPT_KEY!,
   }).register({
     'im.message.receive_v1': async (data) => {
+      console.log(data);
       const chatId = data.message.chat_id;
       const content = JSON.parse(data.message.content);
       const respond = (text: string) => {
