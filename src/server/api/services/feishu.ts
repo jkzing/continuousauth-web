@@ -51,13 +51,16 @@ export function feishuRoutes() {
       };
 
       // 处理 /cfa-link 命令
-      if (content.text && content.text.startsWith('/cfa-link')) {
-        const linkerId = content.text.split(' ')[1];
+      // text could be '@_user_1 /cfa-link 686a5157-c100-4b9c-94c2-ce3238ae30c3'
+      const REGEX_CFA_LINK = /\/cfa-link\s+(.*)$/i;
+      if (content.text && REGEX_CFA_LINK.test(content.text)) {
+        const linkerId = REGEX_CFA_LINK.exec(content.text)?.[1];
         if (!linkerId) {
+          return respond('提供的 linker ID 格式错误，请返回 CFA 重试。');
         }
 
         try {
-          const linker = await FeishuResponderLinker.findByPk(linkerId, {
+          const linker = await FeishuResponderLinker.findByPk(linkerId.trim(), {
             include: [Project],
           });
 
