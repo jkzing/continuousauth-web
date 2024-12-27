@@ -4,6 +4,7 @@ import {
   FeishuResponderConfig,
   FeishuResponderLinker,
   Project,
+  OTPRequest,
   withTransaction,
 } from '../../db/models';
 
@@ -104,18 +105,97 @@ export function feishuRoutes() {
     {
       encryptKey: process.env.FEISHU_ENCRYPT_KEY!,
     },
-    (data) => {
-      console.log(data);
-      return {
-        toast: {
-          type: 'success',
-          content: '卡片交互成功',
-          i18n: {
-            zh_cn: '卡片交互成功',
-            en_us: 'card action success',
-          },
-        },
-      };
+    async (data) => {
+      // {
+      //   schema: '2.0',
+      //   event_id: 'a8e94b247598037c679395467776bdc1',
+      //   token: 'c-353909c8c23cd98c83ff7bcf6c3778b694978c81',
+      //   create_time: '1735301571334572',
+      //   event_type: 'card.action.trigger',
+      //   tenant_key: '736588c9260f175d',
+      //   app_id: 'cli_a7e7b48b8e69100e',
+      //   operator: {
+      //     tenant_key: '736588c9260f175d',
+      //     open_id: 'ou_957db25bcafe6b6d9c37851c26d1fd23',
+      //     union_id: 'on_2875333cf7031b751628aa57a852f176'
+      //   },
+      //   action: {
+      //     value: {
+      //       callback: 'otp_submit',
+      //       otp: '${otp_token}',
+      //       request_id: '5271f798-0127-4bc4-ab30-1a387e72cf66'
+      //     },
+      //     tag: 'input',
+      //     input_value: '233233'
+      //   },
+      //   host: 'im_message',
+      //   context: {
+      //     open_message_id: 'om_ff22c60ebebf86d5924e063acb6a045d',
+      //     open_chat_id: 'oc_5be033bd2a68c22dc86a6356a5d3e531'
+      //   },
+      //   [Symbol(event-type)]: 'card.action.trigger'
+      // }
+      if (data.action?.value?.callback === 'otp_submit') {
+        const requestId = data.action?.value?.request_id;
+        if (!requestId) {
+          return {
+            toast: {
+              type: 'error',
+              content:
+                'CFA experienced an unexpected error while processing your response, please try again later.',
+            },
+          };
+        }
+        const otp = data.action?.input_value;
+        if (!otp || otp.length !== 6) {
+          return {
+            toast: {
+              type: 'error',
+              content: 'CFA received an invalid OTP, please try again.',
+            },
+          };
+        }
+        const request: OTPRequest<unknown, any> | null = await OTPRequest.findByPk(requestId);
+        if (!request) {
+          return {
+            toast: {
+              type: 'error',
+              content:
+                'CFA experienced an unexpected error while finding your request, please try again later.',
+            },
+          };
+        }
+        if (request.state !== 'validated') {
+          return {
+            toast: {
+              type: 'error',
+              content: 'This OTP request is in an invalid state and can not be responded to.',
+            },
+          };
+        }
+        if (request.responseMetadata?.messageId === data.context?.open_message_id) {
+          // ensure the message is same as the one we sent
+          request.state = 'responded';
+          request.responded = new Date();
+          request.response = otp;
+          request.userThatResponded = data.operator.open_id;
+          await request.save();
+          return {
+            toast: {
+              type: 'success',
+              content: 'CFA received your OTP, thank you!',
+            },
+          };
+        } else {
+          console.log(data);
+          return {
+            toast: {
+              type: 'error',
+              content: 'CFA experienced an unknown error, please try again later.',
+            },
+          };
+        }
+      }
     },
   );
 

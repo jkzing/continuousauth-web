@@ -28,8 +28,7 @@ export class FeishuResponder extends Responder<unknown, FeishuResponderMetadata>
       const config = this.project.responder_feishu;
       if (!config) return;
 
-      const messageText = this.getOtpText(request.project);
-      const card = this.buildCard(messageText, info);
+      const card = this.buildCard(request, info);
 
       const response = await this.client.im.message.create({
         params: {
@@ -56,11 +55,14 @@ export class FeishuResponder extends Responder<unknown, FeishuResponderMetadata>
     }
   }
 
-  private getOtpText = (project: Project) =>
+  private buildCard(
+    request: OTPRequest<unknown, FeishuResponderMetadata>,
+    info: RequestInformation | null,
+  ) {
     // `⚠️ 注意! CFA 系统需要 2FA OTP token 来发布 ${project.repoOwner}/${project.repoName} 的新版本。`;
-    `🚧 Attention on deck! The CFA system needs a 2FA OTP token to publish a new release of ${project.repoOwner}/${project.repoName}. （已编辑） \nThe request source is linked below\n> TODO\nThis request has been validated by CFA and now just requires a OTP code.`;
+    const project = request.project;
+    const messageText = `🚧 Attention on deck! The CFA system needs a 2FA OTP token to publish a new release of ${project.repoOwner}/${project.repoName}. （已编辑） \nThe request source is linked below\n> TODO\nThis request has been validated by CFA and now just requires a OTP code.`;
 
-  private buildCard(messageText: string, info: RequestInformation | null) {
     // if (info) {
     //   elements.push({
     //     tag: 'div',
@@ -97,10 +99,19 @@ export class FeishuResponder extends Responder<unknown, FeishuResponderMetadata>
               tag: 'input',
               placeholder: {
                 tag: 'plain_text',
-                content: 'Enter OTP here',
+                content: 'Enter OTP Token',
               },
               default_value: '',
               width: 'default',
+              behaviors: [
+                {
+                  type: 'callback',
+                  value: {
+                    request_id: request.id,
+                    callback: 'otp_submit',
+                  },
+                },
+              ],
             },
           ],
           fallback: {
