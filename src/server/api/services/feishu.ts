@@ -5,14 +5,13 @@ import { FeishuResponderConfig, FeishuResponderLinker, Project, withTransaction 
 declare module 'express-session' {
   interface SessionData {
     feishu?: {
-      tenantKey: string;
       accessToken: string;
     };
   }
 }
 
 export function feishuRoutes() {
-  const router = express.Router();
+  const router = express();
 
   router.get('/oauth', async (req, res) => {
     const { code } = req.query;
@@ -26,12 +25,6 @@ export function feishuRoutes() {
     });
 
     try {
-      // 获取 tenant_access_token
-      const tenantToken = await client.auth.tenantAccessToken.create();
-      if (tenantToken.code !== 0) {
-        throw new Error(`Failed to get tenant access token: ${tenantToken.msg}`);
-      }
-
       // 使用授权码获取用户访问令牌
       const userInfo = await client.authen.accessToken.create({
         data: {
@@ -45,17 +38,15 @@ export function feishuRoutes() {
       }
 
       // 存储租户信息和令牌
-      const tenantKey = userInfo.data?.tenant_key;
       const accessToken = userInfo.data?.access_token;
 
-      if (!tenantKey || !accessToken) {
-        throw new Error('Failed to get tenant key or access token');
+      if (!accessToken) {
+        throw new Error('Failed to get access token');
       }
 
       // 将令牌信息存储到 session 中，供后续使用
       if (req.session) {
         req.session.feishu = {
-          tenantKey,
           accessToken,
         };
       }
@@ -101,7 +92,7 @@ export function feishuRoutes() {
             {
               chatId: chat_id,
               userToMention: user_id,
-              tenantKey: req.session?.feishu?.tenantKey || '',
+              tenantKey: '',
               appToken: req.session?.feishu?.accessToken || '',
             },
             {

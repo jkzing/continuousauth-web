@@ -333,7 +333,7 @@ export class FeishuResponderConfig extends Model<
 
   @AllowNull(false)
   @Column(DataType.STRING)
-  tenantKey: string;
+  tenantKey: string; // TODO: remove this
 
   @AllowNull(false)
   @Column(DataType.STRING)
