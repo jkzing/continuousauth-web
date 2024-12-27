@@ -410,6 +410,27 @@ const migrationFns: ((t: Transaction, qI: QueryInterface) => Promise<void>)[] = 
       );
     }
   },
+  async function addFeishuResponder(t: Transaction, queryInterface: QueryInterface) {
+    const table: any = await queryInterface.describeTable(Project.getTableName());
+    if (!table.responder_feishu_id) {
+      await queryInterface.addColumn(
+        Project.getTableName() as string,
+        'responder_feishu_id',
+        {
+          type: DataType.UUID,
+          allowNull: true,
+          references: {
+            model: FeishuResponderConfig.getTableName(),
+            key: 'id',
+          },
+          onDelete: 'SET NULL',
+        },
+        {
+          transaction: t,
+        },
+      );
+    }
+  },
 ];
 
 const initializeInstance = async (sequelize: Sequelize) => {
@@ -422,6 +443,7 @@ const initializeInstance = async (sequelize: Sequelize) => {
     OTPRequest,
     SlackInstall,
     FeishuResponderConfig,
+    FeishuResponderLinker
   ]);
 
   await sequelize.sync();

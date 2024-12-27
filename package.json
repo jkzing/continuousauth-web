@@ -8,7 +8,7 @@
   "scripts": {
     "build": "npm run build:client && npm run build:server",
     "build:client": "rm -rf public_out && cross-env NODE_ENV=production webpack --config webpack.production.config.js",
-    "build:server": "rm -rf lib && tsc",
+    "build:server": "rm -rf lib && tsc -p tsconfig.build.json",
     "prettier:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "prettier:write": "prettier --write \"src/**/*.{ts,tsx}\"",
     "start": "npm run start:prod",
