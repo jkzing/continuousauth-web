@@ -61,10 +61,14 @@ export class FeishuResponder extends Responder<unknown, FeishuResponderMetadata>
     info: RequestInformation | null,
   ) {
     const project = request.project;
-    const messageText = `🚧 Attention on deck! The CFA system needs a 2FA OTP token to publish a new release of **${project.repoOwner}/${project.repoName}**.
+    const messageText = `🚧 **Attention on deck!**
+
+The CFA system needs a 2FA OTP token to publish a new release of **${project.repoOwner}/${project.repoName}**.
+
 The request source is linked below:
 [${info?.description}](${info?.url})
-This request has been validated by CFA and now just requires a OTP code.`;
+
+*This request has been validated by CFA and now just requires a OTP code.*`;
 
     return {
       config: {

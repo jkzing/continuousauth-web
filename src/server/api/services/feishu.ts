@@ -186,7 +186,7 @@ export function feishuRoutes() {
           return {
             toast: {
               type: 'success',
-              content: 'CFA received your OTP, thank you!',
+              content: 'CFA received your OTP!',
             },
             card: {
               type: 'raw',
@@ -201,7 +201,9 @@ export function feishuRoutes() {
                 elements: [
                   {
                     tag: 'markdown',
-                    content: 'CFA received your OTP, thank you!',
+                    content: `✅ CFA successfully received OTP token.
+
+The publishing process will now continue automatically.`,
                     text_align: 'left',
                     text_size: 'normal',
                   },
