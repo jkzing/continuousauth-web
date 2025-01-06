@@ -100,7 +100,6 @@ export function repoRoutes() {
             responder_feishu: p.responder_feishu
               ? {
                   chatId: p.responder_feishu.chatId,
-                  userToMention: p.responder_feishu.userToMention,
                 }
               : null,
           };

@@ -35,9 +35,6 @@ export function FeishuResponderConfig({ project, setProject }: Props) {
   const [chatId, setChatId] = React.useState(
     project.responder_feishu ? project.responder_feishu.chatId : '',
   );
-  const [userToMention, setUserToMention] = React.useState(
-    project.responder_feishu ? project.responder_feishu.userToMention : '',
-  );
 
   React.useEffect(() => {
     if (!project.responder_feishu && createLinkerTask.start) {
@@ -51,9 +48,9 @@ export function FeishuResponderConfig({ project, setProject }: Props) {
       headers: new Headers({
         'Content-Type': 'application/json',
       }),
-      body: JSON.stringify({ chatId, userToMention }),
+      body: JSON.stringify({ chatId }),
     }),
-    [chatId, userToMention],
+    [chatId],
   );
 
   const updateConfigTask = useAsyncTaskFetch<FullProject>(
@@ -81,14 +78,6 @@ export function FeishuResponderConfig({ project, setProject }: Props) {
             placeholder="Chat ID"
             value={chatId}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setChatId(e.target.value)}
-          />
-        </Pane>
-        <Pane marginBottom={16}>
-          <TextInput
-            width="100%"
-            placeholder="User ID to mention"
-            value={userToMention}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUserToMention(e.target.value)}
           />
         </Pane>
         <Button

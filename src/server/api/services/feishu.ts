@@ -77,7 +77,6 @@ export function feishuRoutes() {
             const config = await FeishuResponderConfig.create(
               {
                 chatId: chatId,
-                userToMention: '',
                 tenantKey: '',
                 appToken: '',
               },

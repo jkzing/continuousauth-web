@@ -21,7 +21,6 @@ export interface SimpleProject extends SimpleRepo {
   } | null;
   responder_feishu: {
     chatId: string;
-    userToMention: string;
   } | null;
 }
 
@@ -40,7 +39,6 @@ export interface FullProject extends SimpleRepo {
   } | null;
   responder_feishu: {
     chatId: string;
-    userToMention: string;
   } | null;
 }
 

@@ -105,7 +105,12 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
   }
 
   static get allIncludes() {
-    return [CircleCIRequesterConfig, GitHubActionsRequesterConfig, SlackResponderConfig, FeishuResponderConfig];
+    return [
+      CircleCIRequesterConfig,
+      GitHubActionsRequesterConfig,
+      SlackResponderConfig,
+      FeishuResponderConfig,
+    ];
   }
 }
 
@@ -329,10 +334,6 @@ export class FeishuResponderConfig extends Model<
 
   @AllowNull(false)
   @Column(DataType.STRING)
-  userToMention: string;
-
-  @AllowNull(false)
-  @Column(DataType.STRING)
   tenantKey: string; // TODO: remove this
 
   @AllowNull(false)
@@ -431,6 +432,18 @@ const migrationFns: ((t: Transaction, qI: QueryInterface) => Promise<void>)[] = 
       );
     }
   },
+  async function removeFeishuUserToMention(t: Transaction, queryInterface: QueryInterface) {
+    const table: any = await queryInterface.describeTable(FeishuResponderConfig.getTableName());
+    if (table.userToMention) {
+      await queryInterface.removeColumn(
+        FeishuResponderConfig.getTableName() as string,
+        'userToMention',
+        {
+          transaction: t,
+        },
+      );
+    }
+  },
 ];
 
 const initializeInstance = async (sequelize: Sequelize) => {
@@ -443,7 +456,7 @@ const initializeInstance = async (sequelize: Sequelize) => {
     OTPRequest,
     SlackInstall,
     FeishuResponderConfig,
-    FeishuResponderLinker
+    FeishuResponderLinker,
   ]);
 
   await sequelize.sync();
