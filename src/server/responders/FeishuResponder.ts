@@ -2,6 +2,7 @@ import * as debug from 'debug';
 import { Client } from '@larksuiteoapi/node-sdk';
 import { Responder, RequestInformation } from './Responder';
 import { FeishuResponderConfig, OTPRequest, Project } from '../db/models';
+import { FEISHU_OPT_SUBMIT_CALLBACK } from '../constants';
 
 const d = debug('cfa:responder:feishu');
 
@@ -59,19 +60,11 @@ export class FeishuResponder extends Responder<unknown, FeishuResponderMetadata>
     request: OTPRequest<unknown, FeishuResponderMetadata>,
     info: RequestInformation | null,
   ) {
-    // `⚠️ 注意! CFA 系统需要 2FA OTP token 来发布 ${project.repoOwner}/${project.repoName} 的新版本。`;
     const project = request.project;
-    const messageText = `🚧 Attention on deck! The CFA system needs a 2FA OTP token to publish a new release of ${project.repoOwner}/${project.repoName}. （已编辑） \nThe request source is linked below\n> TODO\nThis request has been validated by CFA and now just requires a OTP code.`;
-
-    // if (info) {
-    //   elements.push({
-    //     tag: 'div',
-    //     text: {
-    //       tag: 'lark_md',
-    //       content: `**Request source:** [${info.description}](${info.url})`,
-    //     },
-    //   });
-    // }
+    const messageText = `🚧 Attention on deck! The CFA system needs a 2FA OTP token to publish a new release of **${project.repoOwner}/${project.repoName}**.
+The request source is linked below:
+[${info?.description}](${info?.url})
+This request has been validated by CFA and now just requires a OTP code.`;
 
     return {
       config: {
@@ -108,7 +101,7 @@ export class FeishuResponder extends Responder<unknown, FeishuResponderMetadata>
                   type: 'callback',
                   value: {
                     request_id: request.id,
-                    callback: 'otp_submit',
+                    callback: FEISHU_OPT_SUBMIT_CALLBACK,
                   },
                 },
               ],
@@ -118,7 +111,7 @@ export class FeishuResponder extends Responder<unknown, FeishuResponderMetadata>
             tag: 'fallback_text',
             text: {
               tag: 'plain_text',
-              content: '仅支持在飞书 V6.8 及以上版本使用',
+              content: 'Only supported on Feishu V6.8 and above',
             },
           },
         },

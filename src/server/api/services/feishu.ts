@@ -7,6 +7,7 @@ import {
   OTPRequest,
   withTransaction,
 } from '../../db/models';
+import { FEISHU_OPT_SUBMIT_CALLBACK } from '../../constants';
 
 declare module 'express-session' {
   interface SessionData {
@@ -52,13 +53,13 @@ export function feishuRoutes() {
         });
       };
 
-      // 处理 /cfa-link 命令
+      // handle /cfa-link command
       // text could be '@_user_1 /cfa-link 686a5157-c100-4b9c-94c2-ce3238ae30c3'
       const REGEX_CFA_LINK = /\/cfa-link\s+(.*)$/i;
       if (content.text && REGEX_CFA_LINK.test(content.text)) {
         const linkerId = REGEX_CFA_LINK.exec(content.text)?.[1];
         if (!linkerId) {
-          return respond('提供的 linker ID 格式错误，请返回 CFA 重试。');
+          return respond('Invalid linker ID format. Please return to CFA and try again.');
         }
 
         try {
@@ -67,7 +68,9 @@ export function feishuRoutes() {
           });
 
           if (!linker) {
-            return respond('提供的 linker ID 已被使用或不存在，请返回 CFA 重试。');
+            return respond(
+              'The provided linker ID has been used or does not exist. Please return to CFA and try again.',
+            );
           }
 
           await withTransaction(async (t) => {
@@ -91,11 +94,11 @@ export function feishuRoutes() {
           });
 
           return respond(
-            `成功将此群组链接到项目 \`${linker.project.repoOwner}/${linker.project.repoName}\``,
+            `Successfully linked this group to project \`${linker.project.repoOwner}/${linker.project.repoName}\``,
           );
         } catch (error) {
           console.error('Error handling cfa-link command:', error);
-          return respond('处理命令时发生错误，请稍后重试。');
+          return respond('An error occurred while processing the command, please try again later.');
         }
       }
     },
@@ -135,7 +138,7 @@ export function feishuRoutes() {
       //   },
       //   [Symbol(event-type)]: 'card.action.trigger'
       // }
-      if (data.action?.value?.callback === 'otp_submit') {
+      if (data.action?.value?.callback === FEISHU_OPT_SUBMIT_CALLBACK) {
         const requestId = data.action?.value?.request_id;
         if (!requestId) {
           return {
@@ -184,6 +187,26 @@ export function feishuRoutes() {
             toast: {
               type: 'success',
               content: 'CFA received your OTP, thank you!',
+            },
+            card: {
+              type: 'raw',
+              data: {
+                header: {
+                  title: {
+                    tag: 'plain_text',
+                    content: 'CFA OTP Request',
+                  },
+                  template: 'green',
+                },
+                elements: [
+                  {
+                    tag: 'markdown',
+                    content: 'CFA received your OTP, thank you!',
+                    text_align: 'left',
+                    text_size: 'normal',
+                  },
+                ],
+              },
             },
           };
         } else {
